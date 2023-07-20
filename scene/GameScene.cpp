@@ -9,6 +9,7 @@ GameScene::~GameScene() {
 	delete spriteBG_;   // BG
 	delete modelStage_; // ステージ
 	delete modelPlayer_;//プレイヤー
+	delete modelBeam_;//ビーム
 }
 
 void GameScene::Initialize() {
@@ -46,9 +47,15 @@ void GameScene::Initialize() {
 	modelPlayer_ = Model::Create();
 	worldTransformPlayer_.scale_ = {0.5f, 0.5f, 0.5f};
 	worldTransformPlayer_.Initialize();
+
+	// ビーム
+	textureHandleBeam_ = TextureManager::Load("beam.png");
+	modelBeam_ = Model::Create();
+	worldTransformBeam_.scale_ = {0.3f, 0.3f, 0.3f};
+	worldTransformBeam_.Initialize();
 }
 
-void GameScene::Update() { PlayerUpdate(); }
+void GameScene::Update() { PlayerUpdate(), BeamUpdate(); }
 
 void GameScene::PlayerUpdate() {
 	// 移動
@@ -77,6 +84,41 @@ void GameScene::PlayerUpdate() {
 	    worldTransformPlayer_.translation_);
 	// 変換行列を定数バッファに転送
 	worldTransformPlayer_.TransferMatrix();
+}
+
+void GameScene::BeamUpdate() {
+
+	BeamMove();
+	BeamBorn();
+	// 変換行列を更新
+	worldTransformBeam_.matWorld_ = MakeAffineMatrix(
+	    worldTransformBeam_.scale_, worldTransformBeam_.rotation_,
+	    worldTransformBeam_.translation_);
+	// 変換行列を定数バッファに転送
+	worldTransformBeam_.TransferMatrix();
+}
+
+// ビーム移動
+void GameScene::BeamMove() {
+	// 移動
+	if (isBeamFlag == true) {
+		worldTransformBeam_.rotation_.x += 0.1f;
+		worldTransformBeam_.translation_.z += 1.0f;
+
+		if (worldTransformBeam_.translation_.z > 40.f) {
+			isBeamFlag = false;
+		}
+	}
+}
+
+// ビーム発射
+void GameScene::BeamBorn() {
+	if (input_->PushKey(DIK_SPACE)) {
+		isBeamFlag = true;
+		worldTransformBeam_.translation_.z = worldTransformPlayer_.translation_.z;
+		worldTransformBeam_.translation_.x = worldTransformPlayer_.translation_.x;
+		worldTransformBeam_.translation_.y = worldTransformPlayer_.translation_.y;
+	}
 }
 
 void GameScene::Draw() {
@@ -112,6 +154,10 @@ void GameScene::Draw() {
 	modelStage_->Draw(worldTransformStage_, viewProjection_, textureHandleStage_);
 	// プレイヤー
 	modelPlayer_->Draw(worldTransformPlayer_, viewProjection_, textureHandlePlayer_);
+	// ビーム
+	if (isBeamFlag == true) {
+		modelBeam_->Draw(worldTransformBeam_, viewProjection_, textureHandleBeam_);
+	}
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
 #pragma endregion
