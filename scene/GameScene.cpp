@@ -3,9 +3,9 @@
 #include <cassert>
 #include"MathUtilityForText.h"
 #include <time.h>
-
+//コンストラクタ
 GameScene::GameScene() {}
-
+//デストラクタ
 GameScene::~GameScene() {
 	delete spriteBG_;   // BG
 	delete modelStage_; // ステージ
@@ -13,7 +13,7 @@ GameScene::~GameScene() {
 	delete modelBeam_;//ビーム
 	delete modelEnemy_;//敵
 }
-
+//初期化
 void GameScene::Initialize() {
 
 	dxCommon_ = DirectXCommon::GetInstance();
@@ -69,9 +69,18 @@ void GameScene::Initialize() {
 	debugText_ = DebugText::GetInstance();
 	debugText_->Initialize();
 }
-
-void GameScene::Update() { PlayerUpdate(), BeamUpdate(), EnemyUpdate(), Collision(); }
-
+//全体の更新
+void GameScene::GamePlayUpdate() { PlayerUpdate(), EnemyUpdate(), BeamUpdate(), Collision(); }
+//更新
+void GameScene::Update() { 
+	//各シーンの更新処理の呼び起こし
+	switch (sceneMode_) {
+	case 0:
+		GamePlayUpdate(); 
+		break;
+	}
+}
+//プレイヤーの更新
 void GameScene::PlayerUpdate() {
 	// 移動
 
@@ -100,7 +109,7 @@ void GameScene::PlayerUpdate() {
 	// 変換行列を定数バッファに転送
 	worldTransformPlayer_.TransferMatrix();
 }
-
+//ビームの更新
 void GameScene::BeamUpdate() {
 
 	BeamMove();
@@ -112,7 +121,6 @@ void GameScene::BeamUpdate() {
 	// 変換行列を定数バッファに転送
 	worldTransformBeam_.TransferMatrix();
 }
-
 // ビーム移動
 void GameScene::BeamMove() {
 	// 移動
@@ -125,8 +133,7 @@ void GameScene::BeamMove() {
 		}
 	}
 }
-
-/// 敵
+// 敵
 void GameScene::EnemyUpdate() {
 	EnemyMove();
 	EnemyBorn();
@@ -137,7 +144,7 @@ void GameScene::EnemyUpdate() {
 	// 変換行列を定数バッファに転送
 	worldTransformEnemy_.TransferMatrix();
 }
-
+//敵の移動
 void GameScene::EnemyMove() {
 	if (isEnemyFlag == true) {
 		worldTransformEnemy_.rotation_.x -= -0.15f;
@@ -149,7 +156,7 @@ void GameScene::EnemyMove() {
 		}
 	}
 }
-
+//敵の行動
 void GameScene::EnemyBorn() {
 	if (isEnemyFlag == false) {
 		isEnemyFlag = true;
@@ -162,7 +169,6 @@ void GameScene::EnemyBorn() {
 		worldTransformEnemy_.translation_.z = 40.f;
 	}
 }
-
 // ビーム発射
 void GameScene::BeamBorn() {
 	if (input_->PushKey(DIK_SPACE)) {
@@ -172,7 +178,7 @@ void GameScene::BeamBorn() {
 		worldTransformBeam_.translation_.y = worldTransformPlayer_.translation_.y;
 	}
 }
-
+//プレイヤーと敵の当たり判定
 void GameScene::CollisionPlayerEnemy() {
 	// 敵が存在すれば
 	if (isEnemyFlag == 1) {
@@ -188,7 +194,7 @@ void GameScene::CollisionPlayerEnemy() {
 		}
 	}
 }
-
+//ビームと敵の当たり判定
 void GameScene::CollisionBeamEnemy() {
 	if (isEnemyFlag == 1) {
 		float ex = abs(worldTransformBeam_.translation_.x - worldTransformEnemy_.translation_.x);
@@ -201,14 +207,44 @@ void GameScene::CollisionBeamEnemy() {
 		}
 	}
 }
-
+//当たり判定
 void GameScene::Collision() {
 	// 衝突判定（プレイヤーと敵）
 	CollisionPlayerEnemy();
 	//ビームと敵
 	CollisionBeamEnemy();
 }
-
+//3D描画
+void GameScene::GamePlayDraw3D() {
+	// ステージ
+	modelStage_->Draw(worldTransformStage_, viewProjection_, textureHandleStage_);
+	// プレイヤー
+	modelPlayer_->Draw(worldTransformPlayer_, viewProjection_, textureHandlePlayer_);
+	// ビーム
+	if (isBeamFlag == true) {
+		modelBeam_->Draw(worldTransformBeam_, viewProjection_, textureHandleBeam_);
+	}
+	// エネミー
+	if (isEnemyFlag == true) {
+		modelEnemy_->Draw(worldTransformEnemy_, viewProjection_, textureHandleEnemy_);
+	}
+}
+//2D背景描画
+void GameScene::GamePlayDraw2DBack() {
+	// 背景
+	spriteBG_->Draw();
+}
+//2D近景描画
+void GameScene::GamePlayDraw2DNear() {
+	/// ゲームスコア
+	char str[100];
+	sprintf_s(str, "SCORE:%d", gameScore_);
+	debugText_->Print(str, 200, 10, 2);
+	// プレイヤーライフ
+	sprintf_s(str, "LIFE:%d", playerLife_);
+	debugText_->Print(str, 900, 10, 2);
+}
+//描画
 void GameScene::Draw() {
 
 	// コマンドリストの取得
@@ -221,10 +257,12 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに背景スプライトの描画処理を追加できる
 	/// </summary>
-	// 背景
-	spriteBG_->Draw();
-
-
+	//各シーンの背景2D表示を呼び出す
+	switch (sceneMode_) { 
+	case 0:
+		GamePlayDraw2DBack();//ゲームプレイ2D背景表示
+		break;
+	}
 	// スプライト描画後処理
 	Sprite::PostDraw();
 	// 深度バッファクリア
@@ -238,17 +276,10 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	/// </summary>
-	// ステージ
-	modelStage_->Draw(worldTransformStage_, viewProjection_, textureHandleStage_);
-	// プレイヤー
-	modelPlayer_->Draw(worldTransformPlayer_, viewProjection_, textureHandlePlayer_);
-	// ビーム
-	if (isBeamFlag == true) {
-		modelBeam_->Draw(worldTransformBeam_, viewProjection_, textureHandleBeam_);
-	}
-	// エネミー
-	if (isEnemyFlag == true) {
-		modelEnemy_->Draw(worldTransformEnemy_, viewProjection_, textureHandleEnemy_);
+	switch (sceneMode_) { 
+	case 0:
+		GamePlayDraw3D();//ゲームプレイ3D表示
+		break;
 	}
 	// 3Dオブジェクト描画後処理
 	Model::PostDraw();
@@ -261,17 +292,12 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに前景スプライトの描画処理を追加できる
 	/// </summary>
-	//debugText_->Print("AAA", 100, 10, 2);
+	switch (sceneMode_) { 
+    case 0:
+		GamePlayDraw2DNear();
+		break;
+	}
 	debugText_->DrawAll();
-	/// ゲームスコア
-	char str[100];
-	sprintf_s(str, "SCORE:%d", gameScore_);
-	debugText_->Print(str, 200, 10, 2);
-	//プレイヤーライフ
-	sprintf_s(str, "LIFE:%d", playerLife_);
-	debugText_->Print(str, 900, 10, 2);
-	
-
 	// スプライト描画後処理
 	Sprite::PostDraw();
 
