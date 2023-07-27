@@ -64,9 +64,13 @@ void GameScene::Initialize() {
 
 	// 乱数調整
 	srand((unsigned int)time(NULL));
+
+	// デバッグテキスト
+	debugText_ = DebugText::GetInstance();
+	debugText_->Initialize();
 }
 
-void GameScene::Update() { PlayerUpdate(), BeamUpdate(), EnemyUpdate(); }
+void GameScene::Update() { PlayerUpdate(), BeamUpdate(), EnemyUpdate(), Collision(); }
 
 void GameScene::PlayerUpdate() {
 	// 移動
@@ -169,6 +173,42 @@ void GameScene::BeamBorn() {
 	}
 }
 
+void GameScene::CollisionPlayerEnemy() {
+	// 敵が存在すれば
+	if (isEnemyFlag == 1) {
+		// 差を求める
+		float dx = abs(worldTransformPlayer_.translation_.x - worldTransformEnemy_.translation_.x);
+		float dz = abs(worldTransformPlayer_.translation_.z - worldTransformEnemy_.translation_.z);
+
+		// 衝突したら
+		if (dx < 1 && dz < 1) {
+			playerLife_ -= 1;
+			// 存在しない
+			isEnemyFlag = 0;
+		}
+	}
+}
+
+void GameScene::CollisionBeamEnemy() {
+	if (isEnemyFlag == 1) {
+		float ex = abs(worldTransformBeam_.translation_.x - worldTransformEnemy_.translation_.x);
+		float ez = abs(worldTransformBeam_.translation_.z - worldTransformEnemy_.translation_.z);
+
+		// 衝突したら
+		if (ex < 1 && ez < 1) {
+			gameScore_ += 1;
+			isEnemyFlag = 0;
+		}
+	}
+}
+
+void GameScene::Collision() {
+	// 衝突判定（プレイヤーと敵）
+	CollisionPlayerEnemy();
+	//ビームと敵
+	CollisionBeamEnemy();
+}
+
 void GameScene::Draw() {
 
 	// コマンドリストの取得
@@ -221,6 +261,16 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに前景スプライトの描画処理を追加できる
 	/// </summary>
+	//debugText_->Print("AAA", 100, 10, 2);
+	debugText_->DrawAll();
+	/// ゲームスコア
+	char str[100];
+	sprintf_s(str, "SCORE:%d", gameScore_);
+	debugText_->Print(str, 200, 10, 2);
+	//プレイヤーライフ
+	sprintf_s(str, "LIFE:%d", playerLife_);
+	debugText_->Print(str, 900, 10, 2);
+	
 
 	// スプライト描画後処理
 	Sprite::PostDraw();
