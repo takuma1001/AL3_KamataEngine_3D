@@ -155,7 +155,22 @@ void GameScene::BeamMove() {
 		}
 	}
 }
-// 敵
+}
+
+// ビーム発射
+void GameScene::BeamBorn() {
+	for (int j = 0; j < 10; j++) {
+		if (input_->PushKey(DIK_SPACE)) {
+			isBeamFlag[j] = true;
+			worldTransformBeam_[j].translation_.z = worldTransformPlayer_.translation_.z;
+			worldTransformBeam_[j].translation_.x = worldTransformPlayer_.translation_.x;
+			worldTransformBeam_[j].translation_.y = worldTransformPlayer_.translation_.y;
+			
+		}
+	}
+}
+
+// 敵更新
 void GameScene::EnemyUpdate() {
 	EnemyMove();
 	EnemyBorn();
