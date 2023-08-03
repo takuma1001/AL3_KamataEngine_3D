@@ -59,6 +59,17 @@ public: // メンバ関数
 	void CollisionPlayerEnemy(); // 衝突判定（プレイヤーと敵）
 	void CollisionBeamEnemy();   // 衝突判定（ビームと敵）
 
+	//タイトル更新
+	void TitleUpdate();
+	//タイトル2D前景描画
+	void TitleDraw2DNear();
+	// ゲームオーバー更新
+	void GameOverUpdate();
+	// ゲームオーバー2D前景描画
+	void GameOverDraw2DNear();
+	//ゲームのリセット
+	void GamePlayStart();
+
 	void GamePlayUpdate();//ゲームプレイ更新
 	void GamePlayDraw3D();//ゲームプレイ3D描画
 	void GamePlayDraw2DBack();//ゲームプレイ2D背景描画
@@ -103,10 +114,22 @@ private: // メンバ変数
 	WorldTransform worldTransformEnemy_;
 	bool isEnemyFlag = false; // 0:たってない,1:たってる
 
+	//タイトル
+	uint32_t textureHandleTitle_ = 0;
+	Sprite* spriteTitle_ = nullptr;
+	//エンター
+	uint32_t textureHandleEnter_ = 0;
+	Sprite* spriteEnter_ = nullptr;
+	//ゲームオーバー
+	uint32_t textureHandleGameOver_ = 0;
+	Sprite* spriteGameOver_ = nullptr;
+
 	// ゲームスコア
 	int gameScore_ = 0;
 	// プレイヤーライフ
 	int playerLife_ = 3;
 	//シーンモード
-	int sceneMode_ = 0;
+	int sceneMode_ = 1;
+	//ゲームタイマー
+	int gameTimer_ = 0;
 };
