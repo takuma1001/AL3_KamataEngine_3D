@@ -57,7 +57,7 @@ public: // メンバ関数
 	// 当たり判定
 	void Collision();            // 衝突判定
 	void CollisionPlayerEnemy(); // 衝突判定（プレイヤーと敵）
-	void CollisionBeamEnemy();   // 衝突判定（ビームと敵）
+	//void CollisionBeamEnemy();   // 衝突判定（ビームと敵）
 
 	//タイトル更新
 	void TitleUpdate();
@@ -104,16 +104,16 @@ private: // メンバ変数
 
 	// ビーム
 	uint32_t textureHandleBeam_ = 0;
-	Model* modelBeam_ = nullptr;
-	WorldTransform worldTransformBeam_;
-	bool isBeamFlag = false;
+	Model* modelBeam_ = {};
+	WorldTransform worldTransformBeam_[10];
+	bool isBeamFlag[10] = {};
 
 	// エネミー
 	uint32_t textureHandleEnemy_ = 0;
-	Model* modelEnemy_ = nullptr;
-	WorldTransform worldTransformEnemy_;
-	bool isEnemyFlag = false; // 0:たってない,1:たってる
-
+	Model* modelEnemy_ = 0;
+	WorldTransform worldTransformEnemy_[10];
+	bool isEnemyFlag[10] = {}; // 0:たってない,1:たってる
+	
 	//タイトル
 	uint32_t textureHandleTitle_ = 0;
 	Sprite* spriteTitle_ = nullptr;
