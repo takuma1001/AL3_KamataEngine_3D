@@ -75,6 +75,15 @@ public: // メンバ関数
 	void GamePlayDraw2DBack();//ゲームプレイ2D背景描画
 	void GamePlayDraw2DNear();//ゲームプレイ2D近景描画
 
+	//サウンド
+	uint32_t soundDataHandleTitle_ = 0;//タイトル
+	uint32_t soundDataHandleGamePlayBGM_ = 0;//ゲームプレイ
+	uint32_t soundDataHandleGameOverBGM_ = 0;//ゲームオーバー
+	uint32_t soundDataHandleEnemyHitSE_ = 0;//敵ヒット
+	uint32_t soundDataHandlePlayerHitSE_ = 0;//プレイヤーヒット
+	uint32_t voiceHandleBGM_ = 0;//音声再生
+
+
 private: // メンバ変数
 	DirectXCommon* dxCommon_ = nullptr;
 	Input* input_ = nullptr;

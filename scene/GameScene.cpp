@@ -88,6 +88,14 @@ void GameScene::Initialize() {
 	// デバッグテキスト
 	debugText_ = DebugText::GetInstance();
 	debugText_->Initialize();
+
+	//サウンドデータ
+	soundDataHandleTitle_ = audio_->LoadWave("Audio/Ring05.wav"); // タイトル
+	soundDataHandleGamePlayBGM_ = audio_->LoadWave("Audio/Ring08.wav"); // ゲームプレイ
+	soundDataHandleGameOverBGM_ = audio_->LoadWave("Audio/Ring09.wav"); // ゲームオーバー
+	soundDataHandleEnemyHitSE_ = audio_->LoadWave("Audio/chord.wav");  // 敵ヒット
+	soundDataHandlePlayerHitSE_ = audio_->LoadWave("Audio/tada.wav"); // プレイヤーヒット
+	voiceHandleBGM_ = audio_->PlayWave(soundDataHandleTitle_,true);   // 音声再生
 }
 
 //全体の更新
@@ -139,6 +147,10 @@ void GameScene::PlayerUpdate() {
 	    worldTransformPlayer_.translation_);
 	// 変換行列を定数バッファに転送
 	worldTransformPlayer_.TransferMatrix();
+
+	// BGM切り替え
+	audio_->StopWave(voiceHandleBGM_);// 停止
+	voiceHandleBGM_ = audio_->PlayWave(soundDataHandleGameOverBGM_, true); // 次の音声
 }
 
 //ビームの更新
@@ -300,6 +312,9 @@ void GameScene::TitleUpdate() {
 		// モードをゲームプレイに変更
 		sceneMode_ = 0;
 		GamePlayStart();
+		//BGM切り替え
+		audio_->StopWave(voiceHandleBGM_);//停止
+		voiceHandleBGM_ = audio_->PlayWave(soundDataHandleGamePlayBGM_, true);//次の音声
 	}
 }
 
@@ -322,6 +337,9 @@ void GameScene::GameOverUpdate() {
 		// モードをゲームプレイに変更
 		sceneMode_ = 1;
 	}
+	// BGM切り替え
+	audio_->StopWave(voiceHandleBGM_);                                     // 停止
+	voiceHandleBGM_ = audio_->PlayWave(soundDataHandleTitle_, true); // 次の音声
 }
 
 //ゲームオーバー2D前景描画
