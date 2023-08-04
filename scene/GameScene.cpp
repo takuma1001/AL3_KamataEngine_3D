@@ -164,26 +164,38 @@ void GameScene::PlayerUpdate() {
 			worldTransformBeam_[b].rotation_.x += 0.1f;
 			worldTransformBeam_[b].translation_.z += 1.0f;
 
-			if (worldTransformBeam_[b].translation_.z > 40.0f) {
+			if (worldTransformBeam_[b].translation_.z >= 40.0f) {
 				isBeamFlag[b] = false;
+				worldTransformBeam_[b].translation_.z = 0;
 			}
 		}
 	}
 }
+ // ビーム発生(発射)
+ void GameScene::BeamBorn() {
+	for (int b = 0; b < 10; b++) {
+		if (isBeamFlag[b] == true)
+			continue;
 
-// ビーム発射
-void GameScene::BeamBorn() {
-    for (int b = 0; b < 10; b++) {
-	    if (input_->PushKey(DIK_SPACE)) {
-		
-			isBeamFlag[b] = true;
-			worldTransformBeam_[b].translation_.z = worldTransformPlayer_.translation_.z;
-			worldTransformBeam_[b].translation_.x = worldTransformPlayer_.translation_.x;
-			worldTransformBeam_[b].translation_.y = worldTransformPlayer_.translation_.y;
-			break;
+		// 発射タイマーが0ならば
+		if (beamTimer == 0) {
+
+			if (input_->TriggerKey(DIK_SPACE)) {
+				isBeamFlag[b] = true;
+				worldTransformBeam_[b].translation_.x = worldTransformPlayer_.translation_.x;
+				worldTransformBeam_[b].translation_.z = worldTransformPlayer_.translation_.z;
+				break;
+			}
+		} else {
+			// 発射タイマーが1以上
+			// 10を越えると再び発射可能
+			beamTimer++;
 		}
-	}	
-}
+		if (beamTimer > 10) {
+			beamTimer = 0;
+		}
+	}
+ }
 
 // 敵更新
 void GameScene::EnemyUpdate() {
@@ -206,11 +218,20 @@ void GameScene::EnemyMove() {
 		if (isEnemyFlag[e] == true) {
 			worldTransformEnemy_[e].rotation_.x -= -0.15f;
 			worldTransformEnemy_[e].translation_.z -= 0.5f;
+			worldTransformEnemy_[e].translation_.x += EnemySpeed_[e];
 
 			// 画面橋処理
 			if (worldTransformEnemy_[e].translation_.z < -5.0f) {
 				isEnemyFlag[e] = false;
 			}
+			if (worldTransformEnemy_[e].translation_.x > 4) {
+				EnemySpeed_[e] = -0.1f;
+			} 
+			if (worldTransformEnemy_[e].translation_.x < -4) {
+				EnemySpeed_[e] = 0.1f;
+			}
+			
+
 		}
 	}
 }
@@ -222,6 +243,12 @@ void GameScene::EnemyBorn() {
 			if (isEnemyFlag[e] == false) {
 
 				isEnemyFlag[e] = true;
+				//敵スピード
+				if (rand() % 2 == 0) {
+				EnemySpeed_[e] = 0.1f;
+			    } else {
+			 	EnemySpeed_[e] = -0.1f;
+			    }
 
 				// 乱数処理
 				int x = rand() % 80;
@@ -268,29 +295,32 @@ void GameScene::CollisionPlayerEnemy()
 }
 
 //ビームと敵の当たり判定
-/* void GameScene::CollisionBeamEnemy() {
-	for (int e = 0; e < 10; i++) {
+ void GameScene::CollisionBeamEnemy() {
+	
+	for (int e = 0; e < 10; e++) {
 		if (isEnemyFlag[e] == 1) {
-			float ex =
-			    abs(worldTransformBeam_.translation_.x - worldTransformEnemy_[i].translation_.x);
-			float ez =
-			    abs(worldTransformBeam_.translation_.z - worldTransformEnemy_[i].translation_.z);
+			for (int b=0;b<10;b++){
+			    float ex = abs(
+				    worldTransformBeam_[b].translation_.x - worldTransformEnemy_[e].translation_.x);
+				float ez = abs(
+				    worldTransformBeam_[b].translation_.z - worldTransformEnemy_[e].translation_.z);
 
-			// 衝突したら
-			if (ex < 1 && ez < 1) {
+				// 衝突したら
+				if (ex < 1 && ez < 1) {
 				gameScore_ += 1;
 				isEnemyFlag[e] = 0;
+				}
 			}
 		}
 	}
-}*/
+}
 
 //当たり判定
 void GameScene::Collision() {
 	// 衝突判定（プレイヤーと敵）
 	CollisionPlayerEnemy();
 	//ビームと敵
-	//CollisionBeamEnemy();
+	CollisionBeamEnemy();
 }
 
 //タイトル更新
