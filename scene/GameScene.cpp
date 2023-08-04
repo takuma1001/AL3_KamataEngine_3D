@@ -95,6 +95,7 @@ void GameScene::Initialize() {
 	soundDataHandleGameOverBGM_ = audio_->LoadWave("Audio/Ring09.wav"); // ゲームオーバー
 	soundDataHandleEnemyHitSE_ = audio_->LoadWave("Audio/chord.wav");  // 敵ヒット
 	soundDataHandlePlayerHitSE_ = audio_->LoadWave("Audio/tada.wav"); // プレイヤーヒット
+	
 	voiceHandleBGM_ = audio_->PlayWave(soundDataHandleTitle_,true);   // 音声再生
 }
 
@@ -148,9 +149,7 @@ void GameScene::PlayerUpdate() {
 	// 変換行列を定数バッファに転送
 	worldTransformPlayer_.TransferMatrix();
 
-	// BGM切り替え
-	audio_->StopWave(voiceHandleBGM_);// 停止
-	voiceHandleBGM_ = audio_->PlayWave(soundDataHandleGameOverBGM_, true); // 次の音声
+
 }
 
 //ビームの更新
@@ -183,20 +182,31 @@ void GameScene::PlayerUpdate() {
 	}
 }
 
-// ビーム発射
+ // ビーム発生(発射)
 void GameScene::BeamBorn() {
-    for (int b = 0; b < 10; b++) {
-	    if (input_->PushKey(DIK_SPACE)) {
-		
-			isBeamFlag[b] = true;
-			worldTransformBeam_[b].translation_.z = worldTransformPlayer_.translation_.z;
-			worldTransformBeam_[b].translation_.x = worldTransformPlayer_.translation_.x;
-			worldTransformBeam_[b].translation_.y = worldTransformPlayer_.translation_.y;
-			break;
-		}
-	}	
-}
+	for (int b = 0; b < 10; b++) {
+		if (isBeamFlag[b] == true)
+			continue;
 
+		// 発射タイマーが0ならば
+		if (beamTimer == 0) {
+
+			if (input_->TriggerKey(DIK_SPACE)) {
+				isBeamFlag[b] = true;
+				worldTransformBeam_[b].translation_.x = worldTransformPlayer_.translation_.x;
+				worldTransformBeam_[b].translation_.z = worldTransformPlayer_.translation_.z;
+				break;
+			}
+		} else {
+			// 発射タイマーが1以上
+			// 10を越えると再び発射可能
+			beamTimer++;
+		}
+		if (beamTimer > 10) {
+			beamTimer = 0;
+		}
+	}
+}
 // 敵更新
 void GameScene::EnemyUpdate() {
 	EnemyMove();
@@ -218,22 +228,35 @@ void GameScene::EnemyMove() {
 		if (isEnemyFlag[e] == true) {
 			worldTransformEnemy_[e].rotation_.x -= -0.15f;
 			worldTransformEnemy_[e].translation_.z -= 0.5f;
+			worldTransformEnemy_[e].translation_.x += EnemySpeed_[e];
 
 			// 画面橋処理
 			if (worldTransformEnemy_[e].translation_.z < -5.0f) {
 				isEnemyFlag[e] = false;
 			}
+			if (worldTransformEnemy_[e].translation_.x > 4) {
+				EnemySpeed_[e] = -0.1f;
+			}
+			if (worldTransformEnemy_[e].translation_.x < -4) {
+				EnemySpeed_[e] = 0.1f;
+			}
 		}
 	}
 }
 
-//敵の発生
+// 敵の発生
 void GameScene::EnemyBorn() {
 	for (int e = 0; e < 10; e++) {
 		if (rand() % 40 == 0) {
 			if (isEnemyFlag[e] == false) {
 
 				isEnemyFlag[e] = true;
+				// 敵スピード
+				if (rand() % 2 == 0) {
+					EnemySpeed_[e] = 0.1f;
+				} else {
+					EnemySpeed_[e] = -0.1f;
+				}
 
 				// 乱数処理
 				int x = rand() % 80;
@@ -268,53 +291,73 @@ void GameScene::CollisionPlayerEnemy()
 				playerLife_ -= 1;
 				// 存在しない
 				isEnemyFlag[e] = 0;
+
+				//プレイヤーヒット
+				audio_->PlayWave(soundDataHandlePlayerHitSE_);
 			}
 
 			// ライフがゼロになった時
 			if (playerLife_ == 0)
 			{
 				sceneMode_ = 2;
+				//  BGM切り替え
+	            audio_->StopWave(voiceHandleBGM_);                               // 停止
+	            voiceHandleBGM_ = audio_->PlayWave(soundDataHandleGameOverBGM_, true); // 次の音声
 			}
 		}
 	}
 }
 
-//ビームと敵の当たり判定
-/* void GameScene::CollisionBeamEnemy() {
-	for (int e = 0; e < 10; i++) {
-		if (isEnemyFlag[e] == 1) {
-			float ex =
-			    abs(worldTransformBeam_.translation_.x - worldTransformEnemy_[i].translation_.x);
-			float ez =
-			    abs(worldTransformBeam_.translation_.z - worldTransformEnemy_[i].translation_.z);
 
-			// 衝突したら
-			if (ex < 1 && ez < 1) {
-				gameScore_ += 1;
-				isEnemyFlag[e] = 0;
+// ビームと敵の当たり判定
+void GameScene::CollisionBeamEnemy() {
+
+	for (int e = 0; e < 10; e++) {
+		if (isEnemyFlag[e] == 1) {
+			for (int b = 0; b < 10; b++) {
+				float ex = abs(
+				    worldTransformBeam_[b].translation_.x - worldTransformEnemy_[e].translation_.x);
+				float ez = abs(
+				    worldTransformBeam_[b].translation_.z - worldTransformEnemy_[e].translation_.z);
+
+				// 衝突したら
+				if (ex < 1 && ez < 1) {
+					gameScore_ += 1;
+					isEnemyFlag[e] = 0;
+					audio_->PlayWave(soundDataHandleEnemyHitSE_);
+				}
 			}
 		}
 	}
-}*/
+}
+
 
 //当たり判定
 void GameScene::Collision() {
 	// 衝突判定（プレイヤーと敵）
 	CollisionPlayerEnemy();
 	//ビームと敵
-	//CollisionBeamEnemy();
+	CollisionBeamEnemy();
 }
 
-//タイトル更新
+// タイトル更新
 void GameScene::TitleUpdate() {
-	//エンターキー押したとき
 	if (input_->TriggerKey(DIK_RETURN)) {
-		// モードをゲームプレイに変更
-		sceneMode_ = 0;
+		// モードをゲームプレイへ変更
 		GamePlayStart();
-		//BGM切り替え
-		audio_->StopWave(voiceHandleBGM_);//停止
-		voiceHandleBGM_ = audio_->PlayWave(soundDataHandleGamePlayBGM_, true);//次の音声
+
+		for (int e = 0; e < 10; e++) {
+			isEnemyFlag[e] = 0;
+		}
+		for (int b = 0; b < 10; b++) {
+			isBeamFlag[b] = false;
+		}
+
+		worldTransformPlayer_.translation_.x = 0;
+
+		// BGＭ切り替え
+		audio_->StopWave(voiceHandleBGM_); // 現在のＢＧＭを停止
+		voiceHandleBGM_ = audio_->PlayWave(soundDataHandleGamePlayBGM_, true); // ゲームプレイBGMを再生
 	}
 }
 
@@ -336,10 +379,10 @@ void GameScene::GameOverUpdate() {
 	if (input_->TriggerKey(DIK_RETURN)) {
 		// モードをゲームプレイに変更
 		sceneMode_ = 1;
+		// BGM切り替え
+	    audio_->StopWave(voiceHandleBGM_);// 停止
+	    voiceHandleBGM_ = audio_->PlayWave(soundDataHandleTitle_, true); // 次の音声
 	}
-	// BGM切り替え
-	audio_->StopWave(voiceHandleBGM_);                                     // 停止
-	voiceHandleBGM_ = audio_->PlayWave(soundDataHandleTitle_, true); // 次の音声
 }
 
 //ゲームオーバー2D前景描画
@@ -357,21 +400,21 @@ void GameScene::GameOverDraw2DNear() {
 	}
 }
 
-void GameScene::GamePlayStart() { 
-
-	//ライフ初期化
+void GameScene::GamePlayStart() {
+	
 	playerLife_ = 3;
-	
-	//スコア初期化
+	sceneMode_ = 0;
 	gameScore_ = 0;
+	gameTimer_ = 0;
+	//playerTimer_ = 0;
 	
-	//プレイヤー更新
-	PlayerUpdate();
-	
-	//敵更新
-	EnemyUpdate();
-}
 
+
+	for (int e = 0; e < 10; e++) {
+		isEnemyFlag[e] = 0;
+		worldTransformEnemy_[e].translation_.y = 0;
+	}
+}
 //3D描画
 void GameScene::GamePlayDraw3D() {
 	
